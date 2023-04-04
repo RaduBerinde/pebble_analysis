@@ -12,6 +12,10 @@
             display: inline-block;
             vertical-align: top;
         }
+        .u-legend.u-inline .u-value {
+             width: 100px;
+             text-align: left;
+         }
         .slider {
             -webkit-appearance: none;
             width: 100%;
@@ -52,17 +56,105 @@
     <select id="traces_dropdown"><option value=""></option></select>
 </div>
 
+<div id="trace_plot_div">
+</div>
+
 <script>
-    $.get("http://localhost:8089/listtraces", function (data) {
+    let dropdown = document.getElementById("traces_dropdown");
+    $.get("http://localhost:8089/list", function (data) {
         let response = JSON.parse(data);
-        let select = document.getElementById("traces_dropdown");
+        console.log(data);
+        console.log(response);
         response.traces.forEach(function(w) {
             let el = document.createElement("option");
             el.value = w;
             el.textContent = w;
-            select.appendChild(el);
+            dropdown.appendChild(el);
         })
     })
+
+    var plot = null;
+    var plotDiv = document.getElementById("trace_plot_div")
+
+    dropdown.onchange = function() {
+        if (plot) {
+            plot.destroy();
+            plot = null;
+        }
+        while (plotDiv.firstChild) {
+            plotDiv.removeChild(plotDiv.firstChild);
+        }
+        if (dropdown.value == "") {
+            return;
+        }
+        let p = document.createElement("p");
+        p.innerHTML = 'Generating plot...';
+        plotDiv.append(p)
+        $.post("http://localhost:8089/plot", JSON.stringify({ trace: dropdown.value }), function (respData) {
+            let res = JSON.parse(respData);
+            let opts = {
+                title: dropdown.value,
+                width: 1200,
+                height: 600,
+                axes: [
+                    {},
+                    {
+                        label: "MB/s",
+                    }
+                ],
+                series: [
+                    {},
+                    {
+                        label: "Reads",
+                        stroke: "rgb(255,0,0)",
+                        value: (u, v) => v.toFixed(2) + " MB/s",
+                        show: false,
+                    },
+                    {
+                        label: "Writes",
+                        stroke: "rgb(0,0,255)",
+                        value: (u, v) => v.toFixed(2) + " MB/s",
+                        show: false,
+                    },
+                    {
+                        label: "Hits" ,
+                        stroke: "rgb(0,255,0)",
+                        value: (u, v) => v.toFixed(2) + " MB/s",
+                        show: false,
+                    },
+                    {
+                        label: "Reads L5+" ,
+                        stroke: "rgb(128,30,30)",
+                        value: (u, v) => v.toFixed(2) + " MB/s",
+                    },
+                    {
+                        label: "Writes L5+" ,
+                        stroke: "rgb(30,30,128)",
+                        value: (u, v) => v.toFixed(2) + " MB/s",
+                    },
+                    {
+                        label: "Hits L5+" ,
+                        stroke: "rgb(30,128,30)",
+                        value: (u, v) => v.toFixed(2) + " MB/s",
+                    },
+                ],
+            };
+            let data = [
+                res.time_axis_unix_secs,
+                res.read_mbps,
+                res.write_mbps,
+                res.cache_hit_mbps,
+                res.read_mbps_l5_l6,
+                res.write_mbps_l5_l6,
+                res.cache_hit_mbps_l5_l6,
+            ];
+
+            plotDiv.removeChild(plotDiv.firstChild)
+            plot = new uPlot(opts, data, plotDiv)
+
+            console.log(res);
+        })
+    }
 </script>
 
 </body>

@@ -45,6 +45,7 @@ func (it *Iterator) NextBatch() ([]objiotracing.Event, error) {
 		} else {
 			return nil, err
 		}
+
 	}
 	p := unsafe.Pointer(&it.buf[0])
 	return unsafe.Slice((*objiotracing.Event)(p), n/eventSize), nil

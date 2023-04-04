@@ -8,7 +8,9 @@ import (
 
 func ListTraces() ([]string, error) {
 	entries, err := os.ReadDir("traces")
-	return nil, err
+	if err != nil {
+		return nil, err
+	}
 	var traces []string
 	for _, e := range entries {
 		name := e.Name()
