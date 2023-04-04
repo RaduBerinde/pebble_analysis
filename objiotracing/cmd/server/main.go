@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
-	"sort"
-	"strings"
+
+	"github.com/RaduBerinde/pebble_analysis/objiotracing/lib"
 )
 
 const port = 8089
@@ -18,16 +17,8 @@ type ListTracesResponse struct {
 
 // ListTraces returns all traces available in the traces/ directory.
 func ListTraces() ListTracesResponse {
-	entries, err := os.ReadDir("traces")
+	traces, err := lib.ListTraces()
 	checkErr(err, "reading traces directory")
-	var traces []string
-	for _, e := range entries {
-		name := e.Name()
-		if strings.HasSuffix(name, ".json") {
-			traces = append(traces, strings.TrimSuffix(name, ".json"))
-		}
-	}
-	sort.Strings(traces)
 	return ListTracesResponse{Traces: traces}
 }
 

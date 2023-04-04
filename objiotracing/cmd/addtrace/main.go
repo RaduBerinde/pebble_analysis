@@ -65,6 +65,7 @@ func main() {
 	endTime := time.Unix(0, events[len(events)-1].StartUnixNano)
 	md.StartTime = startTime.Format(time.RFC3339)
 	md.DurationSecs = int((endTime.Sub(startTime) + time.Second - 1) / time.Second)
+	md.NumEvents = len(events)
 
 	outFilename := fmt.Sprintf("traces/%s.gz", traceName)
 	fmt.Printf("Writing %s..\n", outFilename)
