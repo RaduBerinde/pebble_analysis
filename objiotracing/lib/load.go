@@ -1,12 +1,13 @@
 package lib
 
 import (
-	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"unsafe"
+
+	gzip "github.com/klauspost/pgzip"
 
 	"github.com/cockroachdb/pebble/objstorage/objstorageprovider/objiotracing"
 )

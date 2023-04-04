@@ -63,8 +63,6 @@
     let dropdown = document.getElementById("traces_dropdown");
     $.get("http://localhost:8089/list", function (data) {
         let response = JSON.parse(data);
-        console.log(data);
-        console.log(response);
         response.traces.forEach(function(w) {
             let el = document.createElement("option");
             el.value = w;
@@ -107,35 +105,35 @@
                     {
                         label: "Reads",
                         stroke: "rgb(255,0,0)",
-                        value: (u, v) => v.toFixed(2) + " MB/s",
+                        value: (u, v) => v == null ? null : v.toFixed(2) + " MB/s",
                         show: false,
                     },
                     {
                         label: "Writes",
                         stroke: "rgb(0,0,255)",
-                        value: (u, v) => v.toFixed(2) + " MB/s",
+                        value: (u, v) => v == null ? null : v.toFixed(2) + " MB/s",
                         show: false,
                     },
                     {
                         label: "Hits" ,
                         stroke: "rgb(0,255,0)",
-                        value: (u, v) => v.toFixed(2) + " MB/s",
+                        value: (u, v) => v == null ? null : v.toFixed(2) + " MB/s",
                         show: false,
                     },
                     {
                         label: "Reads L5+" ,
                         stroke: "rgb(128,30,30)",
-                        value: (u, v) => v.toFixed(2) + " MB/s",
+                        value: (u, v) => v == null ? null : v.toFixed(2) + " MB/s",
                     },
                     {
                         label: "Writes L5+" ,
                         stroke: "rgb(30,30,128)",
-                        value: (u, v) => v.toFixed(2) + " MB/s",
+                        value: (u, v) => v == null ? null : v.toFixed(2) + " MB/s",
                     },
                     {
                         label: "Hits L5+" ,
                         stroke: "rgb(30,128,30)",
-                        value: (u, v) => v.toFixed(2) + " MB/s",
+                        value: (u, v) => v == null ? null : v.toFixed(2) + " MB/s",
                     },
                 ],
             };
@@ -151,8 +149,6 @@
 
             plotDiv.removeChild(plotDiv.firstChild)
             plot = new uPlot(opts, data, plotDiv)
-
-            console.log(res);
         })
     }
 </script>
