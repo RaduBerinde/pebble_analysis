@@ -22,6 +22,25 @@ func ListTraces() ListTracesResponse {
 	return ListTracesResponse{Traces: traces}
 }
 
+type PlotTraceRequest struct {
+	Trace string `json:"trace"`
+}
+
+type PlotTraceResponse struct {
+	Ticks            int `json:"ticks"`
+	TickDurationSecs int `json:"tick_duration_secs"`
+
+	TimeAxisUnixSecs []int `json:"time_axis_unix_secs"`
+
+	ReadMBPS     []float64 `json:"read_mbps"`
+	WriteMBPS    []float64 `json:"write_mbps"`
+	CacheHitMBPS []float64 `json:"cache_hit_mbps"`
+
+	ReadMBPSL5L6     []float64 `json:"read_mbps_l5_l6"`
+	WriteMBPSL5L6    []float64 `json:"write_mbps_l5_l6"`
+	CacheHitMBPSL5L6 []float64 `json:"cache_hit_mbps_l5_l6"`
+}
+
 func main() {
 	http.HandleFunc("/listtraces", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Access-Control-Allow-Origin", "*")
