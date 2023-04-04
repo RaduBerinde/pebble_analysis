@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"compress/gzip"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/RaduBerinde/pebble_analysis/objiotracing/lib"
 	"github.com/cockroachdb/pebble/objstorage/objstorageprovider/objiotracing"
+	gzip "github.com/klauspost/pgzip"
 )
 
 type Event = objiotracing.Event
