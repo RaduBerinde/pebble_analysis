@@ -33,6 +33,8 @@ func ListTraces() ListTracesResponse {
 
 func main() {
 	http.HandleFunc("/listtraces", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Access-Control-Allow-Origin", "*")
+		log.Printf("listtraces\n")
 		res := ListTraces()
 		buf, err := json.Marshal(&res)
 		checkErr(err, "marshalling response")
