@@ -8,9 +8,21 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type wrappedTrace struct {
+	inner []objiotracing.Event
+	done  bool
+}
+
+func (t *wrappedTrace) NextBatch() ([]objiotracing.Event, error) {
+	if t.done {
+		return nil, nil
+	}
+	t.done = true
+	return t.inner, nil
+}
+
 func TestSimulate(t *testing.T) {
-	// TODO(josh): Once we understand how to set samples, add TinyLFU here.
-	for i, policy := range []ReplacementPolicy{ClockPro, S4LRU} {
+	for i, policy := range []ReplacementPolicy{ClockPro, S4LRU, TinyLFU} {
 		t.Run(fmt.Sprint(i), func(t *testing.T) {
 			var config Config
 			var trace []objiotracing.Event
@@ -18,6 +30,10 @@ func TestSimulate(t *testing.T) {
 				config = Config{
 					Policy: policy,
 					CacheSize: 1024,
+				}
+				if policy == TinyLFU {
+					samples := 10 * config.CacheSize
+					config.TinyLFUSamples = &samples
 				}
 				trace = []objiotracing.Event{
 					{
@@ -84,7 +100,8 @@ func TestSimulate(t *testing.T) {
 						Size: 1024,
 					},
 				}
-				results := Simulate(trace, config)
+				results, err := Simulate(t.Name(), &wrappedTrace{inner: trace}, config)
+				require.NoError(t, err)
 				require.Equal(t, 3, results.Hits)
 				require.Equal(t, 3, results.Misses)
 			})
@@ -93,7 +110,8 @@ func TestSimulate(t *testing.T) {
 				defer func() {
 					config.L5AndL6Only = false
 				}()
-				results := Simulate(trace, config)
+				results, err := Simulate(t.Name(), &wrappedTrace{inner: trace}, config)
+				require.NoError(t, err)
 				// Reads to other levels don't count as either hits or misses.
 				require.Equal(t, 1, results.Hits)
 				require.Equal(t, 1, results.Misses)
@@ -103,7 +121,8 @@ func TestSimulate(t *testing.T) {
 				defer func() {
 					config.CacheUserFacingReadsOnly = false
 				}()
-				results := Simulate(trace, config)
+				results, err := Simulate(t.Name(), &wrappedTrace{inner: trace}, config)
+				require.NoError(t, err)
 				// Reads done for reasons other as part of compaction, etc. don't
 				// count as either hits or misses.
 				require.Equal(t, 1, results.Hits)
@@ -115,7 +134,8 @@ func TestSimulate(t *testing.T) {
 				defer func() {
 					config.BlockSize = nil
 				}()
-				results := Simulate(trace, config)
+				results, err := Simulate(t.Name(), &wrappedTrace{inner: trace}, config)
+				require.NoError(t, err)
 				// Initial miss will fill cache with what is needed for rest of reads
 				// to be hits.
 				require.Equal(t, 5, results.Hits)
@@ -126,7 +146,8 @@ func TestSimulate(t *testing.T) {
 				defer func() {
 					config.WriteThru = false
 				}()
-				results := Simulate(trace, config)
+				results, err := Simulate(t.Name(), &wrappedTrace{inner: trace}, config)
+				require.NoError(t, err)
 				// Inclusion of write-thru leads to one more hit than first test case.
 				require.Equal(t, 4, results.Hits)
 				require.Equal(t, 2, results.Misses)
@@ -138,7 +159,8 @@ func TestSimulate(t *testing.T) {
 					config.WriteThru = false
 					config.CacheUserFacingReadsOnly = false
 				}()
-				results := Simulate(trace, config)
+				results, err := Simulate(t.Name(), &wrappedTrace{inner: trace}, config)
+				require.NoError(t, err)
 				// Both reads that are (likely) user-facing are hits, since earlier
 				// write done as part of compaction has filled cache.
 				require.Equal(t, 2, results.Hits)

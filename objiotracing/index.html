@@ -59,6 +59,15 @@
 <div id="trace_plot_div">
 </div>
 
+<div id="simulate_plot_div1">
+</div>
+
+<div id="simulate_plot_div2">
+</div>
+
+<div id="simulate_plot_div3">
+</div>
+
 <script>
     let dropdown = document.getElementById("traces_dropdown");
     $.get("http://localhost:8089/list", function (data) {
@@ -71,27 +80,55 @@
         })
     })
 
-    var plot = null;
-    var plotDiv = document.getElementById("trace_plot_div")
+    var tracePlot = null;
+    var tracePlotDiv = document.getElementById("trace_plot_div")
+
+    var simulatePlots = [null, null, null]
+    var simulatePlotDivs = [
+        document.getElementById("simulate_plot_div1"),
+        document.getElementById("simulate_plot_div2"),
+        document.getElementById("simulate_plot_div3"),
+        ]
 
     dropdown.onchange = function() {
-        if (plot) {
-            plot.destroy();
-            plot = null;
+        if (tracePlot) {
+            tracePlot.destroy();
+            tracePlot = null;
         }
-        while (plotDiv.firstChild) {
-            plotDiv.removeChild(plotDiv.firstChild);
+        while (tracePlotDiv.firstChild) {
+            tracePlotDiv.removeChild(tracePlotDiv.firstChild);
         }
+
+        simulatePlots.forEach(function(plot) {
+            if (plot) {
+                plot.destroy()
+                plot = null
+            }
+        })
+        simulatePlotDivs.forEach(function(div) {
+            while (div.firstChild) {
+                div.removeChild(div.firstChild);
+            }
+        })
+
         if (dropdown.value == "") {
             return;
         }
+
         let p = document.createElement("p");
-        p.innerHTML = 'Generating plot...';
-        plotDiv.append(p)
+        p.innerHTML = 'Generating...';
+        tracePlotDiv.append(p)
+
+        simulatePlotDivs.forEach(function(div) {
+            let p = document.createElement("p");
+            p.innerHTML = 'Generating...';
+            div.append(p)
+        })
+
         $.post("http://localhost:8089/plot", JSON.stringify({ trace: dropdown.value }), function (respData) {
             let res = JSON.parse(respData);
             let opts = {
-                title: dropdown.value,
+                title: "IO stats",
                 width: 1200,
                 height: 600,
                 axes: [
@@ -147,8 +184,59 @@
                 res.cache_hit_mbps_l5_l6,
             ];
 
-            plotDiv.removeChild(plotDiv.firstChild)
-            plot = new uPlot(opts, data, plotDiv)
+            tracePlotDiv.removeChild(tracePlotDiv.firstChild)
+            tracePlot = new uPlot(opts, data, tracePlotDiv)
+        })
+
+        $.post("http://localhost:8089/simulate", JSON.stringify({ trace: dropdown.value }), function (respData) {
+            let rgb = [
+                "rgb(255,0,0)",
+                "rgb(0,0,255)",
+                "rgb(0,255,0)",
+                "rgb(128,30,30)",
+                "rgb(30,30,128)",
+                "rgb(30,128,30)",
+            ];
+            let res = JSON.parse(respData);
+            let i = 0
+            res.results_per_replacement_policy.forEach(function(perPolicy) {
+                let opts = {
+                    title: dropdown.value,
+                    width: 1200,
+                    height: 600,
+                    axes: [
+                        {},
+                        {
+                            label: "hit rate",
+                        }
+                    ],
+                    series: [
+                        {},
+                    ],
+                    scales: {
+                        x: {
+                            time: false,
+                        }
+                    }
+                };
+                let data = [
+                    res.cache_size,
+                ];
+                let j = 0
+                perPolicy.results_per_option_set.forEach(function(perOptionSet) {
+                    opts.series.push({
+                        label: perOptionSet.option_set,
+                        stroke: rgb[j],
+                        value: (u, v) => v == null ? null : v.toFixed(2) + "%",
+                    })
+                    data.push(perOptionSet.hit_rate)
+                    j++
+                })
+                opts.title = perPolicy.replacement_policy
+                simulatePlotDivs[i].removeChild(simulatePlotDivs[i].firstChild)
+                simulatePlots[i] = new uPlot(opts, data, simulatePlotDivs[i])
+                i++
+            })
         })
     }
 </script>
